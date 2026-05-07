@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>欲しいリストに追加</title>
+  <style>
+    /* 確認ポップアップ */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    .popup-overlay.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .popup-box {
+      background: #fff;
+      border: 1px solid #999;
+      padding: 16px 20px;
+      min-width: 280px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+    }
+    .popup-box .cap {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popup-box .txt {
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    .popup-box .btn {
+      display: flex;
+      gap: 8px;
+    }
+    .popup-box .btn button {
+      padding: 4px 16px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .popup-close-icon {
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+    }
+
+    /* 欲しいリストボタン */
+    .function-button {
+      display: inline-block;
+      border: 1px solid #999;
+      height: 30px;
+      width: 140px;
+      font-size: 12px;
+      line-height: 26px;
+      cursor: pointer;
+      text-align: center;
+      background: #f5f5f5;
+    }
+    .function-button:hover { background: #e0e0e0; }
+    .function-button-disabled {
+      display: inline-block;
+      border: 1px solid #ccc;
+      height: 30px;
+      width: 140px;
+      font-size: 12px;
+      line-height: 26px;
+      text-align: center;
+      background: #f5f5f5;
+      color: #aaa;
+      cursor: default;
+    }
+    .status-msg {
+      margin-top: 8px;
+      font-size: 12px;
+      color: green;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  欲しいリストに追加ボタン
+  ・genpinId: 商品の内部ID（この例は Nikon Z5 ボディ = 2387002）
+  ・APIエンドポイントはすべて www.mapcamera.com のものをそのまま使用
+-->
+<div id="wantlist">
+  <span id="wishAddBtn" class="function-button">欲しいリストに追加</span>
+  <div class="status-msg" id="statusMsg">欲しいリストに追加しました。</div>
+</div>
+
+<!-- 確認ポップアップ -->
+<div class="popup-overlay" id="wishPopup">
+  <div class="popup-box">
+    <p class="cap">
+      欲しいリストに追加
+      <span class="popup-close-icon" id="popupClose">✕</span>
+    </p>
+    <p class="txt">
+      欲しいリストに商品を追加します。<br>
+      商品情報が更新された際に、お知らせメールを受信できるようになります。
+    </p>
+    <p class="btn">
+      <button id="popupAdd">登録する</button>
+      <button id="popupCancel">キャンセル</button>
+    </p>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---- 設定 ----
+  var GENPIN_ID  = 2387002;
+  var APPEND_URL = '/ec/mybox/AppendWishListItem';
+
+  // ---- 要素 ----
+  var addBtn     = document.getElementById('wishAddBtn');
+  var wishPopup  = document.getElementById('wishPopup');
+  var popupAdd   = document.getElementById('popupAdd');
+  var popupCancel = document.getElementById('popupCancel');
+  var popupClose = document.getElementById('popupClose');
+  var statusMsg  = document.getElementById('statusMsg');
+
+  // ---- 欲しいリストへ登録（バックグラウンド送信） ----
+  function appendWishListItem() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APPEND_URL, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send('genpinId=' + encodeURIComponent(GENPIN_ID));
+  }
+
+  // ---- イベント: ボタンクリック → ポップアップ表示 ----
+  function onAddBtnClick() {
+    wishPopup.classList.add('active');
+  }
+
+  // ---- イベント: 「登録する」 ----
+  popupAdd.addEventListener('click', function () {
+    wishPopup.classList.remove('active');
+    // 元サイトと同様、レスポンスを待たず即座にUI変更
+    addBtn.className = 'function-button-disabled';
+    addBtn.removeEventListener('click', onAddBtnClick);
+    statusMsg.style.display = 'block';
+    appendWishListItem();
+  });
+
+  // ---- イベント: 「キャンセル」「✕」 ----
+  function closePopup() {
+    wishPopup.classList.remove('active');
+  }
+  popupCancel.addEventListener('click', closePopup);
+  popupClose.addEventListener('click', closePopup);
+
+  // ---- オーバーレイ外クリックで閉じる ----
+  wishPopup.addEventListener('click', function (e) {
+    if (e.target === wishPopup) closePopup();
+  });
+
+  addBtn.addEventListener('click', onAddBtnClick);
+})();
+</script>
+
+</body>
+</html>
